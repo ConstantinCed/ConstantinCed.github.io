@@ -19,3 +19,9 @@ li { margin: 8px 0; padding-left: 2px; }
   .intro { flex-direction: column; gap: 12px; }
   .intro img { width: 112px; height: 112px; }
 }
+
+.paper { margin: 0 0 24px; }
+.paper > a { display: inline-block; line-height: 1.4; margin-bottom: 5px; }
+.paper .authors { margin: 0; font-size: 15px; line-height: 1.55; }
+.paper .date { margin: 3px 0 0; font-size: 14px; color: #666; }
+.paper strong { font-weight: 600; }
