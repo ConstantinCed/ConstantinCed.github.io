@@ -15,9 +15,10 @@ The workflow can also be run from Actions → Update publications and publish
 website → Run workflow. An arXiv outage or invalid response leaves the site intact
 and fails the run visibly in Actions. Future daily runs try again.
 
-GitHub Pages must use **Settings → Pages → Source → GitHub Actions**. The workflow
-publishes directly because commits made with `GITHUB_TOKEN` do not themselves
-trigger GitHub Pages builds. No personal access token or other secret is needed.
+The workflow publishes directly using a Pages artifact because commits made with
+`GITHUB_TOKEN` do not themselves trigger GitHub Pages builds. Direct deployment
+has been verified with this repository’s existing Pages configuration. No personal
+access token or other secret is needed.
 
 GitHub may disable scheduled workflows after 60 days without repository activity.
 If that happens, open the workflow in Actions and click **Enable workflow**, then
