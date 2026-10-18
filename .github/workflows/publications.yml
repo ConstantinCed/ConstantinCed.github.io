@@ -1,0 +1,85 @@
+name: Update publications and publish website
+
+on:
+  schedule:
+    # Daily at 15:23 UTC (8:23 a.m. PDT / 7:23 a.m. PST).
+    - cron: '23 15 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: website-publications
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pages: read
+    outputs:
+      deploy: ${{ steps.changes.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test publication updater
+        run: python -m unittest discover -s tests -v
+      - name: Check arXiv for new papers
+        if: github.event_name != 'push'
+        run: python scripts/update_publications.py
+      - name: Save new publications
+        id: changes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if ! git diff --quiet -- index.html; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add index.html
+            git commit -m 'Add new arXiv publications'
+            git push origin HEAD:main
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = 'push' ] || [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'deploy=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Configure Pages
+        if: steps.changes.outputs.deploy == 'true'
+        uses: actions/configure-pages@v5
+      - name: Prepare public website files
+        if: steps.changes.outputs.deploy == 'true'
+        run: |
+          mkdir _site
+          cp index.html styles.css google4eb82cb11a7a951b.html _site/
+          cp -R assets _site/assets
+      - name: Upload website
+        if: steps.changes.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: needs.build.outputs.deploy == 'true'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish website
+        id: deployment
+        uses: actions/deploy-pages@v4
